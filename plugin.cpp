@@ -5,7 +5,8 @@
 #include <commdlg.h>
 #include <ShlObj.h>
 #include <commctrl.h>
-#include <filesystem> // For path manipulation, C++17 needed. If C++17 is not available, use Windows API like PathFindFileNameW.
+#include <filesystem> // For path manipulation (C++17 required)
+#include <algorithm>  // For std::remove_if, std::for_each
 
 #pragma comment(lib, "comdlg32.lib")
 #pragma comment(lib, "shell32.lib")
@@ -30,12 +31,12 @@
 #define IDOK 1
 #define IDCANCEL 2
 
-// --- OFN_ALLOWMULTIPLE の定義 (commdlg.h で定義されているはずですが、念のため) ---
+// --- OFN_ALLOWMULTIPLE の定義 ---
 #ifndef OFN_ALLOWMULTIPLE
 #define OFN_ALLOWMULTIPLE 0x00000200L
 #endif
 
-// --- LVIF_ALL の定義 (commctrl.h で定義されているはずですが、念 ????) ---
+// --- LVIF_ALL の定義 ---
 #ifndef LVIF_ALL
 #define LVIF_ALL 0xFFFFFFFF
 #endif
@@ -76,15 +77,22 @@ static LPCWSTR WINAPI DefineFuncGetConfigText();
 static void AddProjectToListView(const ProjectInfo& pi) {
     if (g_hListView == NULL) return;
 
+    // LVITEMW structure for inserting an item
     LVITEMW lvi = { 0 };
-    lvi.mask = LVIF_TEXT; // Use LVIF_TEXT for text items
-    lvi.iItem = LVIF_ALL; // Insert at the end
-    lvi.iSubItem = 0;
-    // pszText must be a writable buffer. Create a temporary buffer for the string.
-    // IMPORTANT: The text data must remain valid as long as the ListView needs it.
-    // For simplicity here, we are storing it directly in the ProjectInfo, which is okay
-    // as long as ProjectInfo objects themselves are managed.
-    lvi.pszText = (LPWSTR)pi.project_path.c_str(); // Project Path column
+    lvi.mask = LVIF_TEXT; // We are setting text for the item
+    lvi.iItem = LVIF_ALL; // Insert at the end of the list
+    lvi.iSubItem = 0;     // The first subitem (column)
+
+    // pszText requires a writable buffer.
+    // However, LVITEMW also has iImage, iState, lParam.
+    // A common approach is to store the string or a pointer to it in lParam,
+    // or use a temporary buffer. For simplicity, let's use temporary buffers.
+    // Note: This can be inefficient if done very frequently.
+
+    // Temporary buffers for each string to be inserted
+    std::vector<wchar_t> projectPathBuf(pi.project_path.begin(), pi.project_path.end());
+    projectPathBuf.push_back(L'\0'); // Null-terminate
+    lvi.pszText = projectPathBuf.data();
     int iItem = ListView_InsertItem(&lvi);
 
     if (iItem == -1) return; // Failed to insert item
@@ -94,12 +102,16 @@ static void AddProjectToListView(const ProjectInfo& pi) {
 
     // Output Folder column
     lvi.iSubItem = 1;
-    lvi.pszText = (LPWSTR)pi.output_path.c_str();
+    std::vector<wchar_t> outputPathBuf(pi.output_path.begin(), pi.output_path.end());
+    outputPathBuf.push_back(L'\0');
+    lvi.pszText = outputPathBuf.data();
     ListView_SetItem(&lvi);
 
     // Output Filename column
     lvi.iSubItem = 2;
-    lvi.pszText = (LPWSTR)pi.output_filename.c_str();
+    std::vector<wchar_t> outputFilenameBuf(pi.output_filename.begin(), pi.output_filename.end());
+    outputFilenameBuf.push_back(L'\0');
+    lvi.pszText = outputFilenameBuf.data();
     ListView_SetItem(&lvi);
 }
 
@@ -152,7 +164,6 @@ static INT_PTR CALLBACK BatchRegisterDialogProc(HWND hDlg, UINT message, WPARAM 
         switch (wmId) {
         case IDC_BTN_ADD_PROJECT: {
             OPENFILENAMEW ofn = { 0 };
-            // Use a larger buffer for potentially multiple file paths, each null-terminated, with a final null terminator.
             wchar_t szFileMulti[MAX_PATH * 10] = { 0 };
 
             ofn.lStructSize = sizeof(ofn);
@@ -177,19 +188,22 @@ static INT_PTR CALLBACK BatchRegisterDialogProc(HWND hDlg, UINT message, WPARAM 
                         pi.project_path = current_file;
                         pi.output_path = current_output_folder;
 
-                        // Extract filename from path and set as default output filename
                         wchar_t filename_buffer[MAX_PATH] = { 0 };
-                        // PathFindFileNameW is safer as it ensures null termination
-                        // We need a writable buffer to get the filename.
-                        if (PathFindFileNameW(current_file.c_str(), filename_buffer, MAX_PATH)) {
+                        // Use PathCchFindFileNameW if available and prefered (Windows Vista+)
+                        // For wider compatibility, using PathFindFileNameW with a buffer.
+                        // PathFindFileNameW returns a pointer to the filename part within the path.
+                        // We need to copy it to a buffer.
+                        const wchar_t* file_part = PathFindFileNameW(current_file.c_str());
+                        if (file_part) {
+                            wcscpy_s(filename_buffer, MAX_PATH, file_part);
+
                             // Remove .aup2 extension and add .mp4
                             PathRemoveExtensionW(filename_buffer);
                             wcscat_s(filename_buffer, MAX_PATH, L".mp4");
                             pi.output_filename = filename_buffer;
                         }
                         else {
-                            // Fallback if path manipulation fails
-                            pi.output_filename = L"output.mp4";
+                            pi.output_filename = L"output.mp4"; // Fallback
                         }
 
                         g_registered_projects.push_back(pi);
@@ -206,7 +220,9 @@ static INT_PTR CALLBACK BatchRegisterDialogProc(HWND hDlg, UINT message, WPARAM 
                         pi.output_path = current_output_folder;
 
                         wchar_t filename_buffer[MAX_PATH] = { 0 };
-                        if (PathFindFileNameW(current_file.c_str(), filename_buffer, MAX_PATH)) {
+                        const wchar_t* file_part = PathFindFileNameW(current_file.c_str());
+                        if (file_part) {
+                            wcscpy_s(filename_buffer, MAX_PATH, file_part);
                             PathRemoveExtensionW(filename_buffer);
                             wcscat_s(filename_buffer, MAX_PATH, L".mp4");
                             pi.output_filename = filename_buffer;
@@ -227,17 +243,15 @@ static INT_PTR CALLBACK BatchRegisterDialogProc(HWND hDlg, UINT message, WPARAM 
             wchar_t folder_path_buffer[MAX_PATH] = { 0 };
 
             bi.hwndOwner = hDlg;
-            bi.pszDisplayName = folder_path_buffer; // Buffer to receive the display name
+            bi.pszDisplayName = folder_path_buffer;
             bi.lpszTitle = L"Select Output Folder";
             bi.ulFlags = BIF_RETURNONLYFSDIRS | BIF_NEWDIALOGSTYLE;
 
             LPITEMIDLIST pidl = SHBrowseForFolder(&bi);
             if (pidl != NULL) {
-                // Get the actual path from the PIDL
                 if (SHGetPathFromIDListW(pidl, folder_path_buffer)) {
                     SetDlgItemTextW(hDlg, IDC_EDIT_OUTPUT_FOLDER, folder_path_buffer);
                 }
-                // Free the PIDL
                 IMalloc* pMalloc = NULL;
                 if (SUCCEEDED(SHGetMalloc(&pMalloc))) {
                     pMalloc->Free(pidl);
@@ -248,12 +262,23 @@ static INT_PTR CALLBACK BatchRegisterDialogProc(HWND hDlg, UINT message, WPARAM 
         }
         case IDC_BTN_REMOVE_PROJECT: {
             // TODO: Implement logic to remove selected project from ListView and g_registered_projects
-            MessageBoxW(hDlg, L"Remove selected project (not implemented).", L"Remove Project", MB_OK);
+            // Get selected item index from ListView
+            int selected_index = ListView_GetNextItem(g_hListView, -1, LVNI_SELECTED);
+            if (selected_index != -1) {
+                // Remove from vector
+                if (selected_index < g_registered_projects.size()) {
+                    g_registered_projects.erase(g_registered_projects.begin() + selected_index);
+                }
+                // Remove from ListView
+                ListView_DeleteItem(g_hListView, selected_index);
+            }
             break;
         }
         case IDC_BTN_CLEAR_PROJECTS: {
-            // TODO: Implement logic to clear all projects from ListView and g_registered_projects
-            MessageBoxW(hDlg, L"Clear all projects (not implemented).", L"Clear Projects", MB_OK);
+            // Clear ListView
+            ListView_DeleteAllItems(g_hListView);
+            // Clear the vector
+            g_registered_projects.clear();
             break;
         }
         case IDOK: {
@@ -263,6 +288,7 @@ static INT_PTR CALLBACK BatchRegisterDialogProc(HWND hDlg, UINT message, WPARAM 
             for (auto& pi : g_registered_projects) {
                 pi.output_path = output_folder;
             }
+            // TODO: Implement saving the registered projects if needed for persistence.
 
             EndDialog(hDlg, TRUE);
             return TRUE;
@@ -285,7 +311,6 @@ static INT_PTR CALLBACK BatchRegisterDialogProc(HWND hDlg, UINT message, WPARAM 
     return FALSE;
 }
 
-// --- Function to display the Batch Register Dialog ---
 static void ShowBatchRegisterDialog() {
     INT_PTR result = DialogBoxParamW(
         GetModuleHandle(NULL),
