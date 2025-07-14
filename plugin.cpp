@@ -9,6 +9,12 @@
 
 #include "output2.h"
 
+// ★★★ OFN_ALLOWMULTIPLE の定義を追加 ★★★
+// もし <commdlg.h> で定義されていない場合に備えて追加します。
+#ifndef OFN_ALLOWMULTIPLE
+#define OFN_ALLOWMULTIPLE 0x00000200L // Standard value for OFN_ALLOWMULTIPLE
+#endif
+
 //====================================================================
 // Constants and Macros
 //====================================================================
@@ -16,9 +22,7 @@
 #define PLUGIN_FILEFILTER L"MP4 Files (*.mp4)\0*.mp4\0"
 #define PLUGIN_INFORMATION L"Batch exports projects to MP4 format."
 
-// Dialog resource ID
 #define IDD_BATCH_REGISTER_DIALOG 101
-// Control IDs
 #define IDC_PROJECT_LIST 1001
 #define IDC_BTN_ADD_PROJECT 1002
 #define IDC_EDIT_OUTPUT_FOLDER 1003
@@ -64,8 +68,6 @@ static INT_PTR CALLBACK BatchRegisterDialogProc(HWND hDlg, UINT message, WPARAM 
     case WM_INITDIALOG: {
         g_hBatchDialog = hDlg;
 
-        // --- Initialize Dialog Controls ---
-        // ★★★ default_output_path の宣言をここに移動しました ★★★
         wchar_t default_output_path[MAX_PATH] = { 0 };
         wcscpy_s(default_output_path, MAX_PATH, L"C:\\Users\\Public\\Videos"); // Placeholder path
         SetDlgItemText(hDlg, IDC_EDIT_OUTPUT_FOLDER, default_output_path);
@@ -82,23 +84,18 @@ static INT_PTR CALLBACK BatchRegisterDialogProc(HWND hDlg, UINT message, WPARAM 
         switch (wmId) {
         case IDC_BTN_ADD_PROJECT: {
             OPENFILENAMEW ofn = { 0 };
-            wchar_t szFile[MAX_PATH] = { 0 };
-            wchar_t szFileMulti[MAX_PATH * 10] = { 0 }; // For multiple files
+            wchar_t szFileMulti[MAX_PATH * 10] = { 0 }; // Buffer for multiple files
 
             ofn.lStructSize = sizeof(ofn);
             ofn.hwndOwner = hDlg;
             ofn.lpstrFilter = L"AviUtl2 Project Files (*.aup2)\0*.aup2\0All Files (*.*)\0*.*\0";
-            ofn.lpstrFile = szFileMulti; // Use the larger buffer for multi-selection
+            ofn.lpstrFile = szFileMulti;
             ofn.nMaxFile = MAX_PATH * 10;
-            // OFN_ALLOWMULTIPLE is available in Windows Vista and later.
-            // If targeting older systems, this might need a fallback.
-            // For modern Windows, it should be defined.
+            // OFN_ALLOWMULTIPLE フラグを使用
             ofn.Flags = OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_ALLOWMULTIPLE;
             ofn.lpstrTitle = L"Select AviUtl2 Project Files";
 
             if (GetOpenFileNameW(&ofn)) {
-                // Process the selected files. szFileMulti will contain a list
-                // of selected files separated by null characters.
                 std::wstring file_list = szFileMulti;
                 size_t start = 0;
                 size_t end = 0;
@@ -106,16 +103,15 @@ static INT_PTR CALLBACK BatchRegisterDialogProc(HWND hDlg, UINT message, WPARAM 
                     std::wstring current_file = file_list.substr(start, end - start);
                     if (!current_file.empty()) {
                         MessageBoxW(hDlg, std::wstring(L"Selected: " + current_file).c_str(), L"File Selection", MB_OK);
-                        // TODO: Add current_file to g_registered_projects and update list
+                        // TODO: Add the selected file to g_registered_projects and update list
                     }
                     start = end + 1;
                 }
-                // Add the last file if it's not empty
                 if (start < file_list.length()) {
                     std::wstring current_file = file_list.substr(start);
                     if (!current_file.empty()) {
                         MessageBoxW(hDlg, std::wstring(L"Selected: " + current_file).c_str(), L"File Selection", MB_OK);
-                        // TODO: Add current_file to g_registered_projects and update list
+                        // TODO: Add the selected file to g_registered_projects and update list
                     }
                 }
             }
@@ -123,7 +119,7 @@ static INT_PTR CALLBACK BatchRegisterDialogProc(HWND hDlg, UINT message, WPARAM 
         }
         case IDC_BTN_BROWSE_FOLDER: {
             BROWSEINFO bi = { 0 };
-            wchar_t folder_path_buffer[MAX_PATH] = { 0 }; // Buffer for the selected path
+            wchar_t folder_path_buffer[MAX_PATH] = { 0 };
 
             bi.hwndOwner = hDlg;
             bi.pszDisplayName = folder_path_buffer;
@@ -152,7 +148,6 @@ static INT_PTR CALLBACK BatchRegisterDialogProc(HWND hDlg, UINT message, WPARAM 
             break;
         }
         case IDOK: {
-            // Retrieve output folder
             wchar_t output_folder[MAX_PATH];
             GetDlgItemTextW(hDlg, IDC_EDIT_OUTPUT_FOLDER, output_folder, MAX_PATH);
             // TODO: Process g_registered_projects here, using output_folder
