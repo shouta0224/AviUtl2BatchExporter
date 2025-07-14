@@ -5,8 +5,7 @@
 #include <commdlg.h>
 #include <ShlObj.h>
 #include <commctrl.h>
-// #include <filesystem> // C++17が必要なため、一旦コメントアウトします。Windows APIで代替します。
-#include <algorithm>
+#include <algorithm> // For std::for_each
 
 #pragma comment(lib, "comdlg32.lib")
 #pragma comment(lib, "shell32.lib")
@@ -36,10 +35,9 @@
 #define OFN_ALLOWMULTIPLE 0x00000200L
 #endif
 
-// --- LVIF_ALL の定義 ---
-#ifndef LVIF_ALL
-#define LVIF_ALL 0xFFFFFFFF
-#endif
+// --- LVIF_TEXT の定義 (単独で使う場合) ---
+// LVITEMW の mask で指定するフラグとして使われます。
+// LVIF_ALL は一般的なものではありません。単独で使う必要があります。
 
 //====================================================================
 // Plugin Global Variables
@@ -77,40 +75,44 @@ static LPCWSTR WINAPI DefineFuncGetConfigText();
 static void AddProjectToListView(const ProjectInfo& pi) {
     if (g_hListView == NULL) return;
 
-    // LVITEMW structure for inserting an item
-    LVITEMW lvi = { 0 };
-    lvi.mask = LVIF_TEXT;
-    lvi.iItem = LVIF_ALL;
-    lvi.iSubItem = 0;
+    // --- Column 0: Project Path ---
+    LVITEMW lvi0 = { 0 };
+    lvi0.mask = LVIF_TEXT;
+    lvi0.iItem = LVIF_ALL; // Insert at the end
+    lvi0.iSubItem = 0;
 
-    // --- Create temporary buffers for each string to be inserted ---
-    // This is necessary because pszText needs a writable buffer, and we are passing const data.
-    // The buffers are local to this function, so they are valid for the ListView_InsertItem/SetItem calls.
-
-    // Project Path column
+    // Temporary buffer for project path
     std::vector<wchar_t> projectPathBuf(pi.project_path.begin(), pi.project_path.end());
     projectPathBuf.push_back(L'\0'); // Null-terminate
-    lvi.pszText = projectPathBuf.data();
-    int iItem = ListView_InsertItem(&lvi);
+    lvi.pszText = projectPathBuf.data(); // Use the temporary buffer
+
+    int iItem = ListView_InsertItem(&lvi0); // Insert the first item (project path)
 
     if (iItem == -1) return; // Failed to insert item
 
-    // Set text for subitems (columns)
-    lvi.iItem = iItem;
+    // --- Column 1: Output Folder ---
+    LVITEMW lvi1 = { 0 };
+    lvi1.mask = LVIF_TEXT;
+    lvi1.iItem = iItem; // Set the item index
+    lvi1.iSubItem = 1;  // Second subitem (column)
 
-    // Output Folder column
-    lvi.iSubItem = 1;
+    // Temporary buffer for output path
     std::vector<wchar_t> outputPathBuf(pi.output_path.begin(), pi.output_path.end());
     outputPathBuf.push_back(L'\0');
-    lvi.pszText = outputPathBuf.data();
-    ListView_SetItem(&lvi);
+    lvi1.pszText = outputPathBuf.data();
+    ListView_SetItem(&lvi1);
 
-    // Output Filename column
-    lvi.iSubItem = 2;
+    // --- Column 2: Output Filename ---
+    LVITEMW lvi2 = { 0 };
+    lvi2.mask = LVIF_TEXT;
+    lvi2.iItem = iItem; // Set the item index
+    lvi2.iSubItem = 2;  // Third subitem (column)
+
+    // Temporary buffer for output filename
     std::vector<wchar_t> outputFilenameBuf(pi.output_filename.begin(), pi.output_filename.end());
     outputFilenameBuf.push_back(L'\0');
-    lvi.pszText = outputFilenameBuf.data();
-    ListView_SetItem(&lvi);
+    lvi2.pszText = outputFilenameBuf.data();
+    ListView_SetItem(&lvi2);
 }
 
 // --- Dialog Procedure ---
@@ -162,7 +164,7 @@ static INT_PTR CALLBACK BatchRegisterDialogProc(HWND hDlg, UINT message, WPARAM 
         switch (wmId) {
         case IDC_BTN_ADD_PROJECT: {
             OPENFILENAMEW ofn = { 0 };
-            wchar_t szFileMulti[MAX_PATH * 10] = { 0 }; // Buffer for multiple files
+            wchar_t szFileMulti[MAX_PATH * 10] = { 0 };
 
             ofn.lStructSize = sizeof(ofn);
             ofn.hwndOwner = hDlg;
@@ -187,19 +189,15 @@ static INT_PTR CALLBACK BatchRegisterDialogProc(HWND hDlg, UINT message, WPARAM 
                         pi.output_path = current_output_folder;
 
                         wchar_t filename_buffer[MAX_PATH] = { 0 };
-                        // Get the file part from the path
                         const wchar_t* file_part = PathFindFileNameW(current_file.c_str());
                         if (file_part) {
-                            // Copy the filename to a writable buffer
                             wcscpy_s(filename_buffer, MAX_PATH, file_part);
-
-                            // Remove .aup2 extension and add .mp4
                             PathRemoveExtensionW(filename_buffer);
                             wcscat_s(filename_buffer, MAX_PATH, L".mp4");
                             pi.output_filename = filename_buffer;
                         }
                         else {
-                            pi.output_filename = L"output.mp4"; // Fallback
+                            pi.output_filename = L"output.mp4";
                         }
 
                         g_registered_projects.push_back(pi);
@@ -257,14 +255,11 @@ static INT_PTR CALLBACK BatchRegisterDialogProc(HWND hDlg, UINT message, WPARAM 
             break;
         }
         case IDC_BTN_REMOVE_PROJECT: {
-            // Get selected item index from ListView
             int selected_index = ListView_GetNextItem(g_hListView, -1, LVNI_SELECTED);
             if (selected_index != -1) {
-                // Remove from vector
                 if (selected_index < g_registered_projects.size()) {
                     g_registered_projects.erase(g_registered_projects.begin() + selected_index);
                 }
-                // Remove from ListView
                 ListView_DeleteItem(g_hListView, selected_index);
             }
             break;
