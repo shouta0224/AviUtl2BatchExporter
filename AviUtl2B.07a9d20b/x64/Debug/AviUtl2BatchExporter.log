@@ -1,5 +1,5 @@
 ﻿  plugin.cpp
-C:\Users\shout\OneDrive\ドキュメント\GitHub\AviUtl2BatchExporter\plugin.cpp(366,24): warning C4267: '初期化中': 'size_t' から 'int' に変換しました。データが失われているかもしれません。
+C:\Users\shout\OneDrive\ドキュメント\GitHub\AviUtl2BatchExporter\plugin.cpp(265,24): warning C4267: '初期化中': 'size_t' から 'int' に変換しました。データが失われているかもしれません。
   LINK : 前回のインクリメンタル リンクで C:\Users\shout\OneDrive\ドキュメント\GitHub\AviUtl2BatchExporter\x64\Debug\AviUtl2BatchExporter.dll が見つからなかったか、ビルドされませんでした。フル リンクを行います。
      ライブラリ C:\Users\shout\OneDrive\ドキュメント\GitHub\AviUtl2BatchExporter\x64\Debug\AviUtl2BatchExporter.lib とオブジェクト C:\Users\shout\OneDrive\ドキュメント\GitHub\AviUtl2BatchExporter\x64\Debug\AviUtl2BatchExporter.exp を作成中
   AviUtl2BatchExporter.vcxproj -> C:\Users\shout\OneDrive\ドキュメント\GitHub\AviUtl2BatchExporter\x64\Debug\AviUtl2BatchExporter.dll
