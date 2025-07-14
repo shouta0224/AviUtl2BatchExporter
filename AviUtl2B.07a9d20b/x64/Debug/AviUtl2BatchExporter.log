@@ -1,11 +1,10 @@
 ﻿  plugin.cpp
-C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\filesystem(12): warning STL4038: The contents of <filesystem> are available only with C++17 or later.
-C:\Users\shout\OneDrive\ドキュメント\GitHub\AviUtl2BatchExporter\plugin.cpp(96,17): warning C4003: 関数に似たマクロ呼び出し 'ListView_InsertItem' の引数が不足しています
-C:\Users\shout\OneDrive\ドキュメント\GitHub\AviUtl2BatchExporter\plugin.cpp(96,17): error C2059: 構文エラー: ')'
-C:\Users\shout\OneDrive\ドキュメント\GitHub\AviUtl2BatchExporter\plugin.cpp(108,5): warning C4003: 関数に似たマクロ呼び出し 'ListView_SetItem' の引数が不足しています
-C:\Users\shout\OneDrive\ドキュメント\GitHub\AviUtl2BatchExporter\plugin.cpp(108,5): error C2059: 構文エラー: ')'
-C:\Users\shout\OneDrive\ドキュメント\GitHub\AviUtl2BatchExporter\plugin.cpp(115,5): warning C4003: 関数に似たマクロ呼び出し 'ListView_SetItem' の引数が不足しています
-C:\Users\shout\OneDrive\ドキュメント\GitHub\AviUtl2BatchExporter\plugin.cpp(115,5): error C2059: 構文エラー: ')'
-C:\Users\shout\OneDrive\ドキュメント\GitHub\AviUtl2BatchExporter\plugin.cpp(137,27): error C2440: '=': 'const wchar_t [13]' から 'LPWSTR' に変換できません。
-C:\Users\shout\OneDrive\ドキュメント\GitHub\AviUtl2BatchExporter\plugin.cpp(141,27): error C2440: '=': 'const wchar_t [14]' から 'LPWSTR' に変換できません。
-C:\Users\shout\OneDrive\ドキュメント\GitHub\AviUtl2BatchExporter\plugin.cpp(145,27): error C2440: '=': 'const wchar_t [16]' から 'LPWSTR' に変換できません。
+C:\Users\shout\OneDrive\ドキュメント\GitHub\AviUtl2BatchExporter\plugin.cpp(94,17): warning C4003: 関数に似たマクロ呼び出し 'ListView_InsertItem' の引数が不足しています
+C:\Users\shout\OneDrive\ドキュメント\GitHub\AviUtl2BatchExporter\plugin.cpp(94,17): error C2059: 構文エラー: ')'
+C:\Users\shout\OneDrive\ドキュメント\GitHub\AviUtl2BatchExporter\plugin.cpp(106,5): warning C4003: 関数に似たマクロ呼び出し 'ListView_SetItem' の引数が不足しています
+C:\Users\shout\OneDrive\ドキュメント\GitHub\AviUtl2BatchExporter\plugin.cpp(106,5): error C2059: 構文エラー: ')'
+C:\Users\shout\OneDrive\ドキュメント\GitHub\AviUtl2BatchExporter\plugin.cpp(113,5): warning C4003: 関数に似たマクロ呼び出し 'ListView_SetItem' の引数が不足しています
+C:\Users\shout\OneDrive\ドキュメント\GitHub\AviUtl2BatchExporter\plugin.cpp(113,5): error C2059: 構文エラー: ')'
+C:\Users\shout\OneDrive\ドキュメント\GitHub\AviUtl2BatchExporter\plugin.cpp(135,27): error C2440: '=': 'const wchar_t [13]' から 'LPWSTR' に変換できません。
+C:\Users\shout\OneDrive\ドキュメント\GitHub\AviUtl2BatchExporter\plugin.cpp(139,27): error C2440: '=': 'const wchar_t [14]' から 'LPWSTR' に変換できません。
+C:\Users\shout\OneDrive\ドキュメント\GitHub\AviUtl2BatchExporter\plugin.cpp(143,27): error C2440: '=': 'const wchar_t [16]' から 'LPWSTR' に変換できません。

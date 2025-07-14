@@ -5,8 +5,8 @@
 #include <commdlg.h>
 #include <ShlObj.h>
 #include <commctrl.h>
-#include <filesystem> // For path manipulation (C++17 required)
-#include <algorithm>  // For std::remove_if, std::for_each
+// #include <filesystem> // C++17が必要なため、一旦コメントアウトします。Windows APIで代替します。
+#include <algorithm>
 
 #pragma comment(lib, "comdlg32.lib")
 #pragma comment(lib, "shell32.lib")
@@ -79,17 +79,15 @@ static void AddProjectToListView(const ProjectInfo& pi) {
 
     // LVITEMW structure for inserting an item
     LVITEMW lvi = { 0 };
-    lvi.mask = LVIF_TEXT; // We are setting text for the item
-    lvi.iItem = LVIF_ALL; // Insert at the end of the list
-    lvi.iSubItem = 0;     // The first subitem (column)
+    lvi.mask = LVIF_TEXT;
+    lvi.iItem = LVIF_ALL;
+    lvi.iSubItem = 0;
 
-    // pszText requires a writable buffer.
-    // However, LVITEMW also has iImage, iState, lParam.
-    // A common approach is to store the string or a pointer to it in lParam,
-    // or use a temporary buffer. For simplicity, let's use temporary buffers.
-    // Note: This can be inefficient if done very frequently.
+    // --- Create temporary buffers for each string to be inserted ---
+    // This is necessary because pszText needs a writable buffer, and we are passing const data.
+    // The buffers are local to this function, so they are valid for the ListView_InsertItem/SetItem calls.
 
-    // Temporary buffers for each string to be inserted
+    // Project Path column
     std::vector<wchar_t> projectPathBuf(pi.project_path.begin(), pi.project_path.end());
     projectPathBuf.push_back(L'\0'); // Null-terminate
     lvi.pszText = projectPathBuf.data();
@@ -164,7 +162,7 @@ static INT_PTR CALLBACK BatchRegisterDialogProc(HWND hDlg, UINT message, WPARAM 
         switch (wmId) {
         case IDC_BTN_ADD_PROJECT: {
             OPENFILENAMEW ofn = { 0 };
-            wchar_t szFileMulti[MAX_PATH * 10] = { 0 };
+            wchar_t szFileMulti[MAX_PATH * 10] = { 0 }; // Buffer for multiple files
 
             ofn.lStructSize = sizeof(ofn);
             ofn.hwndOwner = hDlg;
@@ -189,12 +187,10 @@ static INT_PTR CALLBACK BatchRegisterDialogProc(HWND hDlg, UINT message, WPARAM 
                         pi.output_path = current_output_folder;
 
                         wchar_t filename_buffer[MAX_PATH] = { 0 };
-                        // Use PathCchFindFileNameW if available and prefered (Windows Vista+)
-                        // For wider compatibility, using PathFindFileNameW with a buffer.
-                        // PathFindFileNameW returns a pointer to the filename part within the path.
-                        // We need to copy it to a buffer.
+                        // Get the file part from the path
                         const wchar_t* file_part = PathFindFileNameW(current_file.c_str());
                         if (file_part) {
+                            // Copy the filename to a writable buffer
                             wcscpy_s(filename_buffer, MAX_PATH, file_part);
 
                             // Remove .aup2 extension and add .mp4
@@ -261,7 +257,6 @@ static INT_PTR CALLBACK BatchRegisterDialogProc(HWND hDlg, UINT message, WPARAM 
             break;
         }
         case IDC_BTN_REMOVE_PROJECT: {
-            // TODO: Implement logic to remove selected project from ListView and g_registered_projects
             // Get selected item index from ListView
             int selected_index = ListView_GetNextItem(g_hListView, -1, LVNI_SELECTED);
             if (selected_index != -1) {
@@ -275,16 +270,13 @@ static INT_PTR CALLBACK BatchRegisterDialogProc(HWND hDlg, UINT message, WPARAM 
             break;
         }
         case IDC_BTN_CLEAR_PROJECTS: {
-            // Clear ListView
             ListView_DeleteAllItems(g_hListView);
-            // Clear the vector
             g_registered_projects.clear();
             break;
         }
         case IDOK: {
             wchar_t output_folder[MAX_PATH];
             GetDlgItemTextW(hDlg, IDC_EDIT_OUTPUT_FOLDER, output_folder, MAX_PATH);
-            // Update the output_path for all registered projects if the folder was changed
             for (auto& pi : g_registered_projects) {
                 pi.output_path = output_folder;
             }
