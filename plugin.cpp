@@ -7,6 +7,7 @@
 #include <commctrl.h>
 #include <algorithm> // For std::for_each
 
+#pragma comment(lib, "shlwapi.lib")
 #pragma comment(lib, "comdlg32.lib")
 #pragma comment(lib, "shell32.lib")
 #pragma comment(lib, "comctl32.lib")
