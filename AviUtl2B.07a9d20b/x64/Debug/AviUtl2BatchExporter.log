@@ -1,4 +1,13 @@
 ﻿  plugin.cpp
-  LINK : 前回のインクリメンタル リンクで C:\Users\shout\OneDrive\ドキュメント\GitHub\AviUtl2BatchExporter\x64\Debug\AviUtl2BatchExporter.dll が見つからなかったか、ビルドされませんでした。フル リンクを行います。
-     ライブラリ C:\Users\shout\OneDrive\ドキュメント\GitHub\AviUtl2BatchExporter\x64\Debug\AviUtl2BatchExporter.lib とオブジェクト C:\Users\shout\OneDrive\ドキュメント\GitHub\AviUtl2BatchExporter\x64\Debug\AviUtl2BatchExporter.exp を作成中
-  AviUtl2BatchExporter.vcxproj -> C:\Users\shout\OneDrive\ドキュメント\GitHub\AviUtl2BatchExporter\x64\Debug\AviUtl2BatchExporter.dll
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\filesystem(12): warning STL4038: The contents of <filesystem> are available only with C++17 or later.
+C:\Users\shout\OneDrive\ドキュメント\GitHub\AviUtl2BatchExporter\plugin.cpp(88,17): warning C4003: 関数に似たマクロ呼び出し 'ListView_InsertItem' の引数が不足しています
+C:\Users\shout\OneDrive\ドキュメント\GitHub\AviUtl2BatchExporter\plugin.cpp(88,17): error C2059: 構文エラー: ')'
+C:\Users\shout\OneDrive\ドキュメント\GitHub\AviUtl2BatchExporter\plugin.cpp(98,5): warning C4003: 関数に似たマクロ呼び出し 'ListView_SetItem' の引数が不足しています
+C:\Users\shout\OneDrive\ドキュメント\GitHub\AviUtl2BatchExporter\plugin.cpp(98,5): error C2059: 構文エラー: ')'
+C:\Users\shout\OneDrive\ドキュメント\GitHub\AviUtl2BatchExporter\plugin.cpp(103,5): warning C4003: 関数に似たマクロ呼び出し 'ListView_SetItem' の引数が不足しています
+C:\Users\shout\OneDrive\ドキュメント\GitHub\AviUtl2BatchExporter\plugin.cpp(103,5): error C2059: 構文エラー: ')'
+C:\Users\shout\OneDrive\ドキュメント\GitHub\AviUtl2BatchExporter\plugin.cpp(125,27): error C2440: '=': 'const wchar_t [13]' から 'LPWSTR' に変換できません。
+C:\Users\shout\OneDrive\ドキュメント\GitHub\AviUtl2BatchExporter\plugin.cpp(129,27): error C2440: '=': 'const wchar_t [14]' から 'LPWSTR' に変換できません。
+C:\Users\shout\OneDrive\ドキュメント\GitHub\AviUtl2BatchExporter\plugin.cpp(133,27): error C2440: '=': 'const wchar_t [16]' から 'LPWSTR' に変換できません。
+C:\Users\shout\OneDrive\ドキュメント\GitHub\AviUtl2BatchExporter\plugin.cpp(184,29): error C2660: 'PathFindFileNameW': 関数に 3 個の引数を指定できません。
+C:\Users\shout\OneDrive\ドキュメント\GitHub\AviUtl2BatchExporter\plugin.cpp(209,29): error C2660: 'PathFindFileNameW': 関数に 3 個の引数を指定できません。
