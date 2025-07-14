@@ -1,3 +1,2 @@
 ﻿  plugin.cpp
-C:\Users\shout\OneDrive\ドキュメント\GitHub\AviUtl2BatchExporter\plugin.cpp(103,60): error C2065: 'OFN_ALLOWMULTIPLE': 定義されていない識別子です。
-C:\Users\shout\OneDrive\ドキュメント\GitHub\AviUtl2BatchExporter\plugin.cpp(131,33): error C2065: 'default_output_path': 定義されていない識別子です。
+C:\Users\shout\OneDrive\ドキュメント\GitHub\AviUtl2BatchExporter\plugin.cpp(96,60): error C2065: 'OFN_ALLOWMULTIPLE': 定義されていない識別子です。
