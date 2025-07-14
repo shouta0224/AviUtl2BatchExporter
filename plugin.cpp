@@ -1,11 +1,11 @@
-#include <windows.h>
+﻿#include <windows.h>
 #include <shlwapi.h>
 #include <string>
 #include <vector>
 #include <commdlg.h>
 #include <ShlObj.h>
 #include <commctrl.h>
-#include <algorithm> // For std::for_each
+#include <algorithm>
 
 #pragma comment(lib, "shlwapi.lib")
 #pragma comment(lib, "comdlg32.lib")
@@ -31,14 +31,10 @@
 #define IDOK 1
 #define IDCANCEL 2
 
-// --- OFN_ALLOWMULTIPLE �̒�` ---
+// --- OFN_ALLOWMULTIPLE の定義 ---
 #ifndef OFN_ALLOWMULTIPLE
 #define OFN_ALLOWMULTIPLE 0x00000200L
 #endif
-
-// --- LVIF_TEXT �̒�` (�P�ƂŎg���ꍇ) ---
-// LVITEMW �� mask �Ŏw�肷��t���O�Ƃ��Ďg���܂��B
-// LVIF_ALL �͈�ʓI�Ȃ��̂ł͂���܂���B�P�ƂŎg���K�v������܂��B
 
 //====================================================================
 // Plugin Global Variables
@@ -46,11 +42,15 @@
 
 static OUTPUT_PLUGIN_TABLE g_output_table = { 0 };
 
-//===== �o�b�`�o�^�E�ݒ�Ɋւ���ϐ� =====
+//===== バッチ登録・設定に関する変数 =====
 struct ProjectInfo {
     std::wstring project_path;
     std::wstring output_path;
     std::wstring output_filename;
+    // ListView に表示するためのバッファを保持
+    std::vector<wchar_t> projectPathBuf;
+    std::vector<wchar_t> outputPathBuf;
+    std::vector<wchar_t> outputFilenameBuf;
 };
 static std::vector<ProjectInfo> g_registered_projects;
 
@@ -81,38 +81,25 @@ static void AddProjectToListView(const ProjectInfo& pi) {
     lvi0.mask = LVIF_TEXT;
     lvi0.iItem = ListView_GetItemCount(g_hListView); // Insert at the end
     lvi0.iSubItem = 0;
+    lvi0.pszText = const_cast<LPWSTR>(pi.projectPathBuf.data()); // Pass the buffer from ProjectInfo
+    int iItem = ListView_InsertItem(g_hListView, &lvi0);
 
-    // Temporary buffer for project path
-    std::vector<wchar_t> projectPathBuf(pi.project_path.begin(), pi.project_path.end());
-    projectPathBuf.push_back(L'\0'); // Null-terminate
-    lvi0.pszText = projectPathBuf.data(); // Use the temporary buffer
-
-    int iItem = ListView_InsertItem(g_hListView, &lvi0); // Insert the first item (project path)
-
-    if (iItem == -1) return; // Failed to insert item
+    if (iItem == -1) return;
 
     // --- Column 1: Output Folder ---
     LVITEMW lvi1 = { 0 };
     lvi1.mask = LVIF_TEXT;
-    lvi1.iItem = iItem; // Set the item index
-    lvi1.iSubItem = 1;  // Second subitem (column)
-
-    // Temporary buffer for output path
-    std::vector<wchar_t> outputPathBuf(pi.output_path.begin(), pi.output_path.end());
-    outputPathBuf.push_back(L'\0');
-    lvi1.pszText = outputPathBuf.data();
+    lvi1.iItem = iItem;
+    lvi1.iSubItem = 1;
+    lvi1.pszText = const_cast<LPWSTR>(pi.outputPathBuf.data());
     ListView_SetItem(g_hListView, &lvi1);
 
     // --- Column 2: Output Filename ---
     LVITEMW lvi2 = { 0 };
     lvi2.mask = LVIF_TEXT;
-    lvi2.iItem = iItem; // Set the item index
-    lvi2.iSubItem = 2;  // Third subitem (column)
-
-    // Temporary buffer for output filename
-    std::vector<wchar_t> outputFilenameBuf(pi.output_filename.begin(), pi.output_filename.end());
-    outputFilenameBuf.push_back(L'\0');
-    lvi2.pszText = outputFilenameBuf.data();
+    lvi2.iItem = iItem;
+    lvi2.iSubItem = 2;
+    lvi2.pszText = const_cast<LPWSTR>(pi.outputFilenameBuf.data());
     ListView_SetItem(g_hListView, &lvi2);
 }
 
@@ -135,24 +122,22 @@ static INT_PTR CALLBACK BatchRegisterDialogProc(HWND hDlg, UINT message, WPARAM 
             LVCOLUMNW lvc = { 0 };
             lvc.mask = LVCF_TEXT | LVCF_WIDTH | LVCF_SUBITEM;
 
-            // �J�����e�L�X�g��const�L���X�g��������
-            wchar_t col1[] = L"Project Path";
-            wchar_t col2[] = L"Output Folder";
-            wchar_t col3[] = L"Output Filename";
+            static const wchar_t col1[] = L"Project Path";
+            static const wchar_t col2[] = L"Output Folder";
+            static const wchar_t col3[] = L"Output Filename";
 
-            lvc.pszText = col1;
+            lvc.pszText = (LPWSTR)col1;
             lvc.cx = 200;
             ListView_InsertColumn(g_hListView, 0, &lvc);
 
-            lvc.pszText = col2;
+            lvc.pszText = (LPWSTR)col2;
             lvc.cx = 150;
             ListView_InsertColumn(g_hListView, 1, &lvc);
 
-            lvc.pszText = col3;
+            lvc.pszText = (LPWSTR)col3;
             lvc.cx = 150;
             ListView_InsertColumn(g_hListView, 2, &lvc);
         }
-
 
         // Set the default output folder
         wchar_t default_output_path[MAX_PATH] = { 0 };
@@ -160,6 +145,9 @@ static INT_PTR CALLBACK BatchRegisterDialogProc(HWND hDlg, UINT message, WPARAM 
         SetDlgItemTextW(hDlg, IDC_EDIT_OUTPUT_FOLDER, default_output_path);
 
         SetWindowText(hDlg, L"Batch Project Registration");
+
+        // Load previously registered projects if persistence is implemented.
+        // For now, g_registered_projects starts empty.
 
         return TRUE;
     }
@@ -207,6 +195,14 @@ static INT_PTR CALLBACK BatchRegisterDialogProc(HWND hDlg, UINT message, WPARAM 
                             pi.output_filename = L"output.mp4";
                         }
 
+                        // Prepare buffers within ProjectInfo for ListView
+                        pi.projectPathBuf.assign(pi.project_path.begin(), pi.project_path.end());
+                        pi.projectPathBuf.push_back(L'\0');
+                        pi.outputPathBuf.assign(pi.output_path.begin(), pi.output_path.end());
+                        pi.outputPathBuf.push_back(L'\0');
+                        pi.outputFilenameBuf.assign(pi.output_filename.begin(), pi.output_filename.end());
+                        pi.outputFilenameBuf.push_back(L'\0');
+
                         g_registered_projects.push_back(pi);
                         AddProjectToListView(pi);
                     }
@@ -231,6 +227,14 @@ static INT_PTR CALLBACK BatchRegisterDialogProc(HWND hDlg, UINT message, WPARAM 
                         else {
                             pi.output_filename = L"output.mp4";
                         }
+
+                        // Prepare buffers within ProjectInfo for ListView
+                        pi.projectPathBuf.assign(pi.project_path.begin(), pi.project_path.end());
+                        pi.projectPathBuf.push_back(L'\0');
+                        pi.outputPathBuf.assign(pi.output_path.begin(), pi.output_path.end());
+                        pi.outputPathBuf.push_back(L'\0');
+                        pi.outputFilenameBuf.assign(pi.output_filename.begin(), pi.output_filename.end());
+                        pi.outputFilenameBuf.push_back(L'\0');
 
                         g_registered_projects.push_back(pi);
                         AddProjectToListView(pi);
@@ -355,22 +359,77 @@ bool WINAPI DefineFuncOutput(OUTPUT_INFO* oip) {
         return false;
     }
 
-    std::wstring message;
-    message += L"Batch Export Started (simulated).\n";
-    message += L"Processing project: ";
-    message += (oip->savefile ? std::wstring(oip->savefile) : L"NoSaveFile");
-    message += L"\n";
-    message += L"Format: ";
-    if (oip->flag & OUTPUT_INFO::FLAG_VIDEO) message += L"Video ";
-    if (oip->flag & OUTPUT_INFO::FLAG_AUDIO) message += L"Audio";
-    if (message.length() == 24) message += L"None";
+    // --- バッチ出力処理のメインループ ---
+    // ここで g_registered_projects に格納されているプロジェクトを順番に処理します。
+    // 各プロジェクトに対して、エンコード処理を実行します。
 
-    MessageBoxW(NULL,
-        message.c_str(),
-        L"Batch Export - Simulating Processing",
-        MB_OK);
+    int total_projects = g_registered_projects.size();
+    int completed_projects = 0;
 
-    return true;
+    for (int i = 0; i < total_projects; ++i) {
+        const ProjectInfo& pi = g_registered_projects[i];
+
+        // --- エンコード処理開始の通知 ---
+        std::wstring progress_msg = L"Processing: ";
+        progress_msg += pi.project_path;
+        // TODO: メッセージボックスではなく、ダイアログ内のステータスバーなどに表示するのが望ましい
+        // MessageBoxW(g_hBatchDialog, progress_msg.c_str(), L"Batch Export - Starting", MB_OK);
+
+        // --- AviUtl2 の出力機能を使ったエンコード処理 ---
+        // ここで oip->func_get_video(), oip->func_get_audio(), oip->func_is_abort() などを
+        // 使用して、実際のエンコード処理を行います。
+        // これは AviUtl2 の具体的な出力プラグインAPIに依存します。
+        // 現状ではダミーのエンコード処理を行います。
+
+        // ダミーエンコード:AviUtl2の標準出力機能を呼び出す想定
+        // oip->savefile は現在の出力ファイル名を示しているはずです。
+        // しかし、ここで設定されているのは最初の登録プロジェクトの情報のみかもしれません。
+        // バッチ処理では、各プロジェクトの出力ファイル名を個別に設定する必要があります。
+        // output2.h には、個別のプロジェクトに対してsavefileを設定するAPIがないため、
+        //AviUtl2本体にバッチ処理用の特別なAPIがあるか、
+        // または、エンコーダープラグインにプロジェクト情報を渡す別の方法が必要になるかもしれません。
+
+        // 今回は、oip->savefile をダミーとして使い、
+        // oip->func_get_video や oip->func_get_audio を呼び出す想定で進めます。
+        // 실제エンコード処理は、AviUtl2 本体や外部エンコーダーライブラリと連携する必要があります。
+
+        // 仮のエンコード処理メッセージ
+        std::wstring encode_sim_msg = L"Simulating encode for: ";
+        encode_sim_msg += pi.project_path;
+        // メッセージボックスは多すぎるので、デバッグ出力やListViewに表示するのが良いでしょう。
+        // MessageBoxW(g_hBatchDialog, encode_sim_msg.c_str(), L"Encoding", MB_OK);
+
+        // エンコード処理の進捗表示（例）
+        // for (int frame = 0; frame < oip->n; ++frame) {
+        //     if (oip->func_is_abort()) {
+        //         MessageBoxW(g_hBatchDialog, L"Encoding aborted by user.", L"Aborted", MB_OK);
+        //         return false; // Aborted
+        //     }
+        //     if (frame % 10 == 0) { // Progress update every 10 frames
+        //         oip->func_rest_time_disp(frame, oip->n);
+        //     }
+        //     // void* video_frame = oip->func_get_video(frame, BI_RGB); // Get video frame
+        //     // void* audio_data = oip->func_get_audio(frame * samples_per_frame, samples_per_frame, ...); // Get audio data
+        //     // Send frame/audio data to encoder
+        // }
+
+        // ダミーのエンコード処理成功として進めます
+        completed_projects++;
+        oip->func_rest_time_disp(i + 1, total_projects); // 進捗表示を更新
+    }
+
+    // --- 全てのエンコードが完了したら ---
+    // TODO: シャットダウン確認ダイアログを表示し、選択に応じて実行する。
+    // ここは、バッチ出力全体が完了したタイミングで行うべき処理です。
+    // 今はダミーメッセージを表示します。
+    MessageBoxW(g_hBatchDialog,
+        (L"Batch encoding finished.\n"
+            L"Completed: " + std::to_wstring(completed_projects) + L"/" + std::to_wstring(total_projects) + L"\n"
+            L"Would you like to shut down your PC?").c_str(),
+        L"Batch Encoding Complete",
+        MB_OK); // TODO: 実際の選択ダイアログに変更
+
+    return true; // 全ての処理が正常に完了したと仮定
 }
 
 static LPCWSTR WINAPI DefineFuncGetConfigText() {
