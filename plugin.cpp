@@ -78,15 +78,15 @@ static void AddProjectToListView(const ProjectInfo& pi) {
     // --- Column 0: Project Path ---
     LVITEMW lvi0 = { 0 };
     lvi0.mask = LVIF_TEXT;
-    lvi0.iItem = LVIF_ALL; // Insert at the end
+    lvi0.iItem = ListView_GetItemCount(g_hListView); // Insert at the end
     lvi0.iSubItem = 0;
 
     // Temporary buffer for project path
     std::vector<wchar_t> projectPathBuf(pi.project_path.begin(), pi.project_path.end());
     projectPathBuf.push_back(L'\0'); // Null-terminate
-    lvi.pszText = projectPathBuf.data(); // Use the temporary buffer
+    lvi0.pszText = projectPathBuf.data(); // Use the temporary buffer
 
-    int iItem = ListView_InsertItem(&lvi0); // Insert the first item (project path)
+    int iItem = ListView_InsertItem(g_hListView, &lvi0); // Insert the first item (project path)
 
     if (iItem == -1) return; // Failed to insert item
 
@@ -100,7 +100,7 @@ static void AddProjectToListView(const ProjectInfo& pi) {
     std::vector<wchar_t> outputPathBuf(pi.output_path.begin(), pi.output_path.end());
     outputPathBuf.push_back(L'\0');
     lvi1.pszText = outputPathBuf.data();
-    ListView_SetItem(&lvi1);
+    ListView_SetItem(g_hListView, &lvi1);
 
     // --- Column 2: Output Filename ---
     LVITEMW lvi2 = { 0 };
@@ -112,7 +112,7 @@ static void AddProjectToListView(const ProjectInfo& pi) {
     std::vector<wchar_t> outputFilenameBuf(pi.output_filename.begin(), pi.output_filename.end());
     outputFilenameBuf.push_back(L'\0');
     lvi2.pszText = outputFilenameBuf.data();
-    ListView_SetItem(&lvi2);
+    ListView_SetItem(g_hListView, &lvi2);
 }
 
 // --- Dialog Procedure ---
@@ -134,18 +134,24 @@ static INT_PTR CALLBACK BatchRegisterDialogProc(HWND hDlg, UINT message, WPARAM 
             LVCOLUMNW lvc = { 0 };
             lvc.mask = LVCF_TEXT | LVCF_WIDTH | LVCF_SUBITEM;
 
-            lvc.pszText = L"Project Path";
+            // カラムテキストのconstキャスト問題を解決
+            wchar_t col1[] = L"Project Path";
+            wchar_t col2[] = L"Output Folder";
+            wchar_t col3[] = L"Output Filename";
+
+            lvc.pszText = col1;
             lvc.cx = 200;
             ListView_InsertColumn(g_hListView, 0, &lvc);
 
-            lvc.pszText = L"Output Folder";
+            lvc.pszText = col2;
             lvc.cx = 150;
             ListView_InsertColumn(g_hListView, 1, &lvc);
 
-            lvc.pszText = L"Output Filename";
+            lvc.pszText = col3;
             lvc.cx = 150;
             ListView_InsertColumn(g_hListView, 2, &lvc);
         }
+
 
         // Set the default output folder
         wchar_t default_output_path[MAX_PATH] = { 0 };

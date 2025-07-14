@@ -1,12 +1,6 @@
 ﻿  plugin.cpp
-C:\Users\shout\OneDrive\ドキュメント\GitHub\AviUtl2BatchExporter\plugin.cpp(81,18): error C2065: 'LVIF_ALL': 定義されていない識別子です。
-C:\Users\shout\OneDrive\ドキュメント\GitHub\AviUtl2BatchExporter\plugin.cpp(87,5): error C2065: 'lvi': 定義されていない識別子です。
-C:\Users\shout\OneDrive\ドキュメント\GitHub\AviUtl2BatchExporter\plugin.cpp(89,17): warning C4003: 関数に似たマクロ呼び出し 'ListView_InsertItem' の引数が不足しています
-C:\Users\shout\OneDrive\ドキュメント\GitHub\AviUtl2BatchExporter\plugin.cpp(89,17): error C2059: 構文エラー: ')'
-C:\Users\shout\OneDrive\ドキュメント\GitHub\AviUtl2BatchExporter\plugin.cpp(103,5): warning C4003: 関数に似たマクロ呼び出し 'ListView_SetItem' の引数が不足しています
-C:\Users\shout\OneDrive\ドキュメント\GitHub\AviUtl2BatchExporter\plugin.cpp(103,5): error C2059: 構文エラー: ')'
-C:\Users\shout\OneDrive\ドキュメント\GitHub\AviUtl2BatchExporter\plugin.cpp(115,5): warning C4003: 関数に似たマクロ呼び出し 'ListView_SetItem' の引数が不足しています
-C:\Users\shout\OneDrive\ドキュメント\GitHub\AviUtl2BatchExporter\plugin.cpp(115,5): error C2059: 構文エラー: ')'
-C:\Users\shout\OneDrive\ドキュメント\GitHub\AviUtl2BatchExporter\plugin.cpp(137,27): error C2440: '=': 'const wchar_t [13]' から 'LPWSTR' に変換できません。
-C:\Users\shout\OneDrive\ドキュメント\GitHub\AviUtl2BatchExporter\plugin.cpp(141,27): error C2440: '=': 'const wchar_t [14]' から 'LPWSTR' に変換できません。
-C:\Users\shout\OneDrive\ドキュメント\GitHub\AviUtl2BatchExporter\plugin.cpp(145,27): error C2440: '=': 'const wchar_t [16]' から 'LPWSTR' に変換できません。
+  LINK : 前回のインクリメンタル リンクで C:\Users\shout\OneDrive\ドキュメント\GitHub\AviUtl2BatchExporter\x64\Debug\AviUtl2BatchExporter.dll が見つからなかったか、ビルドされませんでした。フル リンクを行います。
+     ライブラリ C:\Users\shout\OneDrive\ドキュメント\GitHub\AviUtl2BatchExporter\x64\Debug\AviUtl2BatchExporter.lib とオブジェクト C:\Users\shout\OneDrive\ドキュメント\GitHub\AviUtl2BatchExporter\x64\Debug\AviUtl2BatchExporter.exp を作成中
+plugin.obj : error LNK2019: 未解決の外部シンボル __imp_PathFindFileNameW が関数 "__int64 __cdecl BatchRegisterDialogProc(struct HWND__ *,unsigned int,unsigned __int64,__int64)" (?BatchRegisterDialogProc@@YA_JPEAUHWND__@@I_K_J@Z) で参照されました
+plugin.obj : error LNK2019: 未解決の外部シンボル __imp_PathRemoveExtensionW が関数 "__int64 __cdecl BatchRegisterDialogProc(struct HWND__ *,unsigned int,unsigned __int64,__int64)" (?BatchRegisterDialogProc@@YA_JPEAUHWND__@@I_K_J@Z) で参照されました
+C:\Users\shout\OneDrive\ドキュメント\GitHub\AviUtl2BatchExporter\x64\Debug\AviUtl2BatchExporter.dll : fatal error LNK1120: 2 件の未解決の外部参照
